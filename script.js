@@ -1,134 +1,115 @@
-const grid = document.getElementById("grid");
-const modal1 = document.getElementById("modal1");
-const modal2 = document.getElementById("modal2");
+document.addEventListener("DOMContentLoaded", () => {
+  const grid = document.getElementById("grid");
+  const modal1 = document.getElementById("modal1");
+  const modal2 = document.getElementById("modal2");
 
-const m1Yes = document.getElementById("m1-yes");
-const m1No  = document.getElementById("m1-no");
-const m2Yes = document.getElementById("m2-yes");
-const m2No  = document.getElementById("m2-no");
+  const m1Yes = document.getElementById("m1-yes");
+  const m1No  = document.getElementById("m1-no");
+  const m2Yes = document.getElementById("m2-yes");
+  const m2No  = document.getElementById("m2-no");
 
-const flowers = [
-  "flowers/flower_purple.png",
-  "flowers/flower_yellow.png",
-  "flowers/flower_blue.png",
-  "flowers/flower_red.png",
-  "flowers/flower_white.png",
-];
+  const flowers = [
+    "flowers/flower_purple.png",
+    "flowers/flower_yellow.png",
+    "flowers/flower_blue.png",
+    "flowers/flower_red.png",
+    "flowers/flower_white.png",
+  ];
 
-/* ------------------ BASIC FUNCTIONS ------------------ */
+  function show(el){ el.classList.add("show"); }
+  function hide(el){ el.classList.remove("show"); }
 
-function show(el){
-  el.classList.add("show");
-}
-
-function hide(el){
-  el.classList.remove("show");
-}
-
-function resetFlowers(){
-  grid.classList.remove("fall");
-  grid.classList.remove("spin-all");
-}
-
-function spinAll(){
-  grid.classList.add("spin-all");
-}
-
-function fallFlowers(){
-  grid.classList.add("fall");
-}
-
-/* ------------------ BUILD FLOWERS ------------------ */
-
-function buildGrid(){
-  grid.innerHTML = "";
-
-  for(let i = 0; i < 50; i++){
-    const tile = document.createElement("div");
-    tile.className = "tile";
-
-    const img = document.createElement("img");
-    img.className = "flower";
-    img.src = flowers[Math.floor(Math.random()*flowers.length)];
-    img.alt = "flower";
-
-    // Mobile tap spin
-    img.addEventListener("pointerdown", () => {
-      img.classList.add("tap-spin");
-      setTimeout(() => img.classList.remove("tap-spin"), 800);
-    });
-
-    tile.appendChild(img);
-    grid.appendChild(tile);
+  function resetFlowers(){
+    grid.classList.remove("fall");
+    grid.classList.remove("spin-all");
+    document.querySelectorAll(".tile").forEach(t => { t.style.transform=""; t.style.opacity=""; });
   }
-}
+  function spinAll(){
+    grid.classList.remove("fall");
+    grid.classList.add("spin-all");
+  }
+  function fallFlowers(){
+    grid.classList.remove("spin-all");
+    grid.classList.add("fall");
+  }
 
-/* ------------------ RUNAWAY BUTTON ------------------ */
+  function buildGrid(){
+    grid.innerHTML = "";
+    for (let i = 0; i < 50; i++){
+      const tile = document.createElement("div");
+      tile.className = "tile";
 
-function moveButtonRandomly(){
-  const btnWidth = m2Yes.offsetWidth;
-  const btnHeight = m2Yes.offsetHeight;
+      const img = document.createElement("img");
+      img.className = "flower";
+      img.alt = "flower";
+      img.src = flowers[Math.floor(Math.random() * flowers.length)];
 
-  const maxX = window.innerWidth - btnWidth;
-  const maxY = window.innerHeight - btnHeight;
+      // Tap spin (mobile friendly, harmless on desktop)
+      img.addEventListener("touchstart", () => {
+        img.classList.add("tap-spin");
+        setTimeout(() => img.classList.remove("tap-spin"), 800);
+      }, { passive: true });
 
-  const x = Math.random() * maxX;
-  const y = Math.random() * maxY;
+      tile.appendChild(img);
+      grid.appendChild(tile);
+    }
+  }
 
-  m2Yes.style.position = "fixed";
-  m2Yes.style.left = x + "px";
-  m2Yes.style.top  = y + "px";
-}
+  // Runaway
+  function moveButtonRandomly(){
+    const w = m2Yes.offsetWidth;
+    const h = m2Yes.offsetHeight;
 
-function resetRunaway(){
-  m2Yes.style.position = "relative";
-  m2Yes.style.left = "0px";
-  m2Yes.style.top  = "0px";
-}
+    const maxX = Math.max(0, window.innerWidth - w);
+    const maxY = Math.max(0, window.innerHeight - h);
 
-/* Detect if device supports hover (desktop) */
-const canHover = window.matchMedia("(hover: hover)").matches;
+    m2Yes.style.position = "fixed";
+    m2Yes.style.left = (Math.random() * maxX) + "px";
+    m2Yes.style.top  = (Math.random() * maxY) + "px";
+  }
 
-if (canHover) {
-  // Desktop version (unchanged behavior)
-  m2Yes.addEventListener("mouseenter", moveButtonRandomly);
-  m2Yes.addEventListener("mousedown", (e) => {
-    e.preventDefault();
-    moveButtonRandomly();
-  });
-} else {
-  // Mobile version (never clickable)
-  const bounce = (e) => {
-    e.preventDefault();
-    moveButtonRandomly();
-  };
+  function resetRunaway(){
+    m2Yes.style.position = "relative";
+    m2Yes.style.left = "0px";
+    m2Yes.style.top = "0px";
+  }
 
-  m2Yes.addEventListener("pointerdown", bounce);
-  m2Yes.addEventListener("click", bounce);
-}
+  const canHover =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(hover: hover)").matches;
 
-/* ------------------ FLOW ------------------ */
+  if (canHover) {
+    
+    m2Yes.addEventListener("mouseenter", moveButtonRandomly);
+    m2Yes.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      moveButtonRandomly();
+    });
+  } else {
 
-window.addEventListener("load", () => {
+    const bounce = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      moveButtonRandomly();
+      return false;
+    };
+
+    m2Yes.addEventListener("touchstart", bounce, { passive: false });
+    m2Yes.addEventListener("click", bounce);
+  }
+
+  // Flow
   buildGrid();
   resetFlowers();
   setTimeout(() => show(modal1), 5000);
-});
 
-m1Yes.addEventListener("click", () => {
-  hide(modal1);
-  spinAll();
-});
+  m1Yes.addEventListener("click", () => { hide(modal1); spinAll(); });
+  m1No.addEventListener("click",  () => { hide(modal1); fallFlowers(); setTimeout(() => show(modal2), 700); });
 
-m1No.addEventListener("click", () => {
-  hide(modal1);
-  fallFlowers();
-  setTimeout(() => show(modal2), 700);
-});
-
-m2No.addEventListener("click", () => {
-  hide(modal2);
-  resetRunaway();
-  resetFlowers();
-  show(modal1);
+  m2No.addEventListener("click", () => {
+    hide(modal2);
+    resetRunaway();
+    resetFlowers();
+    show(modal1);
+  });
 });
