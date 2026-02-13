@@ -74,30 +74,21 @@ document.addEventListener("DOMContentLoaded", () => {
     m2Yes.style.top = "0px";
   }
 
-  const canHover =
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(hover: hover)").matches;
+  // Verbesserte Logik für den Runaway-Button
+  const moveAndPrevent = (e) => {
+    e.preventDefault(); // Verhindert das eigentliche Anklicken
+    e.stopPropagation();
+    moveButtonRandomly();
+  };
 
-  if (canHover) {
-    
-    m2Yes.addEventListener("mouseenter", moveButtonRandomly);
-    m2Yes.addEventListener("mousedown", (e) => {
-      e.preventDefault();
-      moveButtonRandomly();
-    });
-  } else {
+  // 1. Mouse-Events für Desktop
+  m2Yes.addEventListener("mouseenter", moveButtonRandomly);
 
-    const bounce = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      moveButtonRandomly();
-      return false;
-    };
+  // 2. Touch-Events für Smartphones (reagiert sofort bei Berührung)
+  m2Yes.addEventListener("touchstart", moveAndPrevent, { passive: false });
 
-    m2Yes.addEventListener("touchstart", bounce, { passive: false });
-    m2Yes.addEventListener("click", bounce);
-  }
-
+  // 3. Fallback für Klicks (falls die anderen nicht greifen)
+  m2Yes.addEventListener("click", moveAndPrevent);
   // Flow
   buildGrid();
   resetFlowers();
